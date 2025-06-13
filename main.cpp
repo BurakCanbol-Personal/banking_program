@@ -1,83 +1,64 @@
-#include <iostream>
-#include <iomanip>
+#include <QApplication>
+#include <QWidget>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QInputDialog>
+#include <QString>
 
-void showBalance(double balance);
-double deposit();
-double withdraw(double balance);
+double balance = 0.0;
 
+void updateLabel(QLabel* label) {
+    label->setText(QString("Current Balance: €%1").arg(QString::number(balance, 'f', 2)));
+}
 
-int main()
-{
-    double balance = 0;
-    int choice = 0;
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    QWidget window;
+    window.setWindowTitle("Simple Banking App");
 
-    do
-    {
-        std::cout << "*******************" << std::endl;
-        std::cout << "Enter you choice:\n";
-        std::cout << "*******************" << std::endl;
-        std::cout << "1. Show Balance" << std::endl;
-        std::cout << "2. Deposit Monet" << std::endl;
-        std::cout << "3. Withdraw Money" << std::endl;
-        std::cout << "4. Exit" << std::endl;
+    QVBoxLayout *layout = new QVBoxLayout();
 
-        std::cin >> choice;
+    QLabel *balanceLabel = new QLabel();
+    updateLabel(balanceLabel);
+    layout->addWidget(balanceLabel);
 
-        switch(choice) {
-            case 1: showBalance(balance);
-                    break;
-            case 2: balance += deposit();
-                    showBalance(balance);
-                    break;
-            case 3: balance -= withdraw(balance);
-                    showBalance(balance);
-                    break;
-            case 4: std::cout << "Thanks for visiting! \n";
-                    break;
-            default: std::cout << "Invalid Choise" << std::endl;
+    QPushButton *depositBtn = new QPushButton("Deposit Money");
+    QPushButton *withdrawBtn = new QPushButton("Withdraw Money");
+    QPushButton *exitBtn = new QPushButton("Exit");
+
+    layout->addWidget(depositBtn);
+    layout->addWidget(withdrawBtn);
+    layout->addWidget(exitBtn);
+
+    QObject::connect(depositBtn, &QPushButton::clicked, [&]() {
+        bool ok;
+        double amount = QInputDialog::getDouble(&window, "Deposit", "Enter amount to deposit:", 0, 0, 1e9, 2, &ok);
+        if (ok) {
+            balance += amount;
+            updateLabel(balanceLabel);
         }
+    });
 
-    } while (choice != 4);
-    
+    QObject::connect(withdrawBtn, &QPushButton::clicked, [&]() {
+        bool ok;
+        double amount = QInputDialog::getDouble(&window, "Withdraw", "Enter amount to withdraw:", 0, 0, 1e9, 2, &ok);
+        if (ok) {
+            if (amount > balance) {
+                balanceLabel->setText("Insufficient funds!");
+            } else {
+                balance -= amount;
+                updateLabel(balanceLabel);
+            }
+        }
+    });
 
-    return 0;
-}
+    QObject::connect(exitBtn, &QPushButton::clicked, [&]() {
+        app.quit();
+    });
 
+    window.setLayout(layout);
+    window.show();
 
-void showBalance(double balance) {
-    std::cout << "Your balance is : €" << std::setprecision(2) << std::fixed << balance << std::endl;
-}
-
-double deposit() {
-
-    double amount = 0;
-    std::cout << "Enter the amount to be deposited: ";
-    std::cin >> amount;
-
-    if (amount > 0) {
-        return amount;
-    } else {
-        std::cout << "That's not a valid amount\n";
-        return 0;
-    }
-}
-
-double withdraw(double balance){
-
-    double amount = 0;
-    std::cout << "Enter amount to be withdraw: ";
-    std::cin >> amount;
-
-    if(amount > balance) {
-        std::cout << "Insufficient funds\n";
-        return 0;
-
-    } else if (amount < 0) {
-        std::cout << " That is not a valid amount\n";
-        return 0;
-
-    } else {
-        return amount;
-    }
-
+    return app.exec();
 }
